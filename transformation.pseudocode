@@ -1,0 +1,203 @@
+/**
+ * ALGORITMO: Transformación de XML a JSON
+ *
+ * Este pseudocódigo demuestra el mapeo de campos desde SOAP/XML a REST/JSON
+ */
+
+FUNCIÓN transformarXmlAJson(mensajeSoap)
+    /**
+     * Entrada: Mensaje SOAP en formato XML
+     * Salida: Objeto JSON transformado
+     */
+
+    // PASO 1: Extraer el cuerpo SOAP
+    cuerpoXml = extraerCuerpoSoap(mensajeSoap)
+
+    // PASO 2: Parsear XML a estructura de datos
+    documentoXml = parsearXML(cuerpoXml)
+
+    // PASO 3: Crear objeto JSON vacío
+    json = {}
+
+    // PASO 4: MAPEO DE CAMPOS SIMPLES
+    json.orderId = extraerValor(documentoXml, "//ord:OrderId")
+    // XML: <ord:OrderId>ORD-2025-001</ord:OrderId>
+    // JSON: "orderId": "ORD-2025-001"
+
+    // PASO 5: MAPEO DE OBJETOS ANIDADOS
+    nodoCliente = extraerNodo(documentoXml, "//ord:Customer")
+    json.customer = {
+        customerId: extraerValor(nodoCliente, "ord:CustomerId"),
+        name: extraerValor(nodoCliente, "ord:Name"),
+        email: extraerValor(nodoCliente, "ord:Email")
+    }
+    // XML: <ord:Customer><ord:CustomerId>CUST-456</ord:CustomerId>...</ord:Customer>
+    // JSON: "customer": { "customerId": "CUST-456", ... }
+
+    // PASO 6: MAPEO DE ARRAYS
+    arregloItems = []
+    nodosItems = extraerNodos(documentoXml, "//ord:Items/ord:Item")
+
+    PARA CADA nodoItem EN nodosItems HACER
+        item = {
+            productId: extraerValor(nodoItem, "ord:ProductId"),
+            quantity: aEntero(extraerValor(nodoItem, "ord:Quantity")),
+            unitPrice: aDecimal(extraerValor(nodoItem, "ord:Price"))
+        }
+        arregloItems.agregar(item)
+    FIN_PARA
+
+    json.items = arregloItems
+    // XML: <ord:Items><ord:Item>...</ord:Item></ord:Items>
+    // JSON: "items": [ { ... }, { ... } ]
+
+    // PASO 7: CONVERSIÓN DE TIPOS DE DATOS
+    json.totalAmount = aDecimal(extraerValor(documentoXml, "//ord:TotalAmount"))
+    // XML: <ord:TotalAmount>301.00</ord:TotalAmount> (cadena)
+    // JSON: "totalAmount": 301.00 (número)
+
+    json.orderDate = extraerValor(documentoXml, "//ord:OrderDate")
+    // XML: <ord:OrderDate>2025-10-04T10:30:00Z</ord:OrderDate>
+    // JSON: "orderDate": "2025-10-04T10:30:00Z" (ISO 8601)
+
+    // PASO 8: ENRIQUECIMIENTO CON METADATOS
+    json.metadata = {
+        correlationId: generarUUID(),
+        sourceSystem: "SOAP_LEGACY",
+        transformedAt: obtenerMarcaTiempoActual()
+    }
+
+    RETORNAR json
+FIN_FUNCIÓN
+
+
+// ============================================================
+// FUNCIONES AUXILIARES
+// ============================================================
+
+FUNCIÓN extraerCuerpoSoap(mensajeSoap)
+    /**
+     * Entrada: Mensaje SOAP completo
+     * Salida: Nodo del cuerpo SOAP
+     */
+    envelopeSoap = parsearXML(mensajeSoap)
+    nodoBody = seleccionarNodo(envelopeSoap, "//soap:Body/*")
+    RETORNAR nodoBody
+FIN_FUNCIÓN
+
+FUNCIÓN extraerValor(nodoXml, xpath)
+    /**
+     * Entrada: Nodo XML y expresión XPath
+     * Salida: Valor de texto del nodo
+     */
+    valor = nodoXml.seleccionarNodoUnico(xpath).contenidoTexto
+    RETORNAR recortar(valor)
+FIN_FUNCIÓN
+
+FUNCIÓN extraerNodo(documentoXml, xpath)
+    /**
+     * Entrada: Documento XML y expresión XPath
+     * Salida: Nodo único seleccionado
+     */
+    RETORNAR documentoXml.seleccionarNodoUnico(xpath)
+FIN_FUNCIÓN
+
+FUNCIÓN extraerNodos(documentoXml, xpath)
+    /**
+     * Entrada: Documento XML y expresión XPath
+     * Salida: Lista de nodos seleccionados
+     */
+    RETORNAR documentoXml.seleccionarNodos(xpath)
+FIN_FUNCIÓN
+
+FUNCIÓN aEntero(valor)
+    /**
+     * Entrada: Valor en formato cadena
+     * Salida: Valor convertido a entero
+     */
+    RETORNAR convertirAEntero(valor)
+FIN_FUNCIÓN
+
+FUNCIÓN aDecimal(valor)
+    /**
+     * Entrada: Valor en formato cadena
+     * Salida: Valor convertido a decimal
+     */
+    RETORNAR convertirADecimal(valor)
+FIN_FUNCIÓN
+
+
+// ============================================================
+// TABLA DE MAPEO
+// ============================================================
+
+/**
+ * MAPEO XML → JSON
+ *
+ * Campo XML (XPath)              → Campo JSON              Conversión
+ * ─────────────────────────────────────────────────────────────────────
+ * //ord:OrderId                  → orderId                 cadena
+ * //ord:Customer/ord:CustomerId  → customer.customerId     cadena
+ * //ord:Customer/ord:Name        → customer.name           cadena
+ * //ord:Customer/ord:Email       → customer.email          cadena
+ * //ord:Items/ord:Item           → items[]                 arreglo
+ * //ord:Item/ord:ProductId       → items[].productId       cadena
+ * //ord:Item/ord:Quantity        → items[].quantity        cadena → entero
+ * //ord:Item/ord:Price           → items[].unitPrice       cadena → decimal
+ * //ord:TotalAmount              → totalAmount             cadena → decimal
+ * //ord:OrderDate                → orderDate               cadena
+ * (generado)                     → metadata.correlationId  UUID
+ * (generado)                     → metadata.sourceSystem   cadena
+ * (generado)                     → metadata.transformedAt  marca de tiempo
+ */
+
+
+// ============================================
+// EJEMPLO DE EJECUCIÓN
+// ============================================
+
+/**
+ * EJEMPLO 1 - Transformación completa:
+ * Entrada XML:
+ * <ord:Order>
+ *   <ord:OrderId>ORD-2025-001</ord:OrderId>
+ *   <ord:Customer>
+ *     <ord:CustomerId>CUST-456</ord:CustomerId>
+ *     <ord:Name>Juan Pérez</ord:Name>
+ *     <ord:Email>juan@example.com</ord:Email>
+ *   </ord:Customer>
+ *   <ord:Items>
+ *     <ord:Item>
+ *       <ord:ProductId>PROD-001</ord:ProductId>
+ *       <ord:Quantity>2</ord:Quantity>
+ *       <ord:Price>100.50</ord:Price>
+ *     </ord:Item>
+ *   </ord:Items>
+ *   <ord:TotalAmount>301.00</ord:TotalAmount>
+ *   <ord:OrderDate>2025-10-04T10:30:00Z</ord:OrderDate>
+ * </ord:Order>
+ *
+ * Salida JSON:
+ * {
+ *   "orderId": "ORD-2025-001",
+ *   "customer": {
+ *     "customerId": "CUST-456",
+ *     "name": "Juan Pérez",
+ *     "email": "juan@example.com"
+ *   },
+ *   "items": [
+ *     {
+ *       "productId": "PROD-001",
+ *       "quantity": 2,
+ *       "unitPrice": 100.50
+ *     }
+ *   ],
+ *   "totalAmount": 301.00,
+ *   "orderDate": "2025-10-04T10:30:00Z",
+ *   "metadata": {
+ *     "correlationId": "uuid-generado",
+ *     "sourceSystem": "SOAP_LEGACY",
+ *     "transformedAt": "2025-10-05T12:00:00Z"
+ *   }
+ * }
+ */
