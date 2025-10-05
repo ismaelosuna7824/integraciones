@@ -1,0 +1,76 @@
+ALGORITMO: CalcularSaldoFinanciero
+ENTRADA: objeto_json (objeto JSON con estructura {"datos": [...]})
+SALIDA: saldo_final (número)
+
+INICIO
+    // Inicializar saldo en cero
+    saldo ← 0
+
+    // Validar que existe la propiedad "datos"
+    SI NO existe objeto_json.datos ENTONCES
+        RETORNAR 0
+    FIN_SI
+
+    // Validar que "datos" es una lista
+    SI objeto_json.datos NO es una lista ENTONCES
+        RETORNAR 0
+    FIN_SI
+
+    // Procesar cada transacción en la lista
+    PARA CADA transaccion EN objeto_json.datos HACER
+
+        // Validar que la transacción es un objeto
+        SI transaccion NO es un objeto ENTONCES
+            CONTINUAR  // Ignorar y pasar a la siguiente
+        FIN_SI
+
+        // Validar que existen las propiedades requeridas
+        SI NO existe transaccion.monto O NO existe transaccion.tipo ENTONCES
+            CONTINUAR  // Ignorar transacción inválida
+        FIN_SI
+
+        // Validar que el monto es numérico
+        SI transaccion.monto NO es número ENTONCES
+            CONTINUAR  // Ignorar transacción inválida
+        FIN_SI
+
+        // Procesar según el tipo de transacción
+        SI transaccion.tipo = "ingreso" ENTONCES
+            saldo ← saldo + transaccion.monto
+
+        SINO SI transaccion.tipo = "egreso" ENTONCES
+            saldo ← saldo - transaccion.monto
+
+        SINO
+            // Tipo inválido, ignorar transacción
+            CONTINUAR
+        FIN_SI
+
+    FIN_PARA
+
+    // Retornar el saldo final calculado
+    RETORNAR saldo
+
+FIN
+
+
+// ============================================
+// EJEMPLO DE EJECUCIÓN
+// ============================================
+
+Entrada:
+{
+  "datos": [
+    {"id": 1, "monto": 1000, "tipo": "ingreso"},
+    {"id": 2, "monto": 500, "tipo": "egreso"},
+    {"id": 3, "monto": 200, "tipo": "ingreso"}
+  ]
+}
+
+Proceso:
+saldo = 0
+Transacción 1: tipo="ingreso", monto=1000 → saldo = 0 + 1000 = 1000
+Transacción 2: tipo="egreso", monto=500 → saldo = 1000 - 500 = 500
+Transacción 3: tipo="ingreso", monto=200 → saldo = 500 + 200 = 700
+
+Salida: 700
