@@ -1,0 +1,103 @@
+/**
+ * ALGORITMO: Transformación de Estructura JSON Cliente-Orden
+ *
+ */
+
+FUNCIÓN transformarJSON(entrada)
+    /**
+     * Entrada: Objeto JSON con estructura {cliente: {...}, orden: {...}}
+     * Salida: Objeto JSON transformado con formato {orderId, customerName, total}
+     */
+
+    // PASO 1: Validación de entrada
+    // Verificar que la entrada no sea nula o indefinida
+    SI entrada ES nulo O entrada ES indefinido ENTONCES
+        RETORNAR {
+            orderId: 0,
+            customerName: "",
+            total: 0
+        }
+    FIN SI
+
+    // PASO 2: Extracción segura de datos del cliente
+    // Obtener referencias a objetos anidados con validación
+    cliente = entrada.cliente SI entrada.cliente EXISTE SINO {}
+    orden = entrada.orden SI entrada.orden EXISTE SINO {}
+
+    // PASO 3: Procesamiento de nombre completo
+    // Extraer nombre y apellido con valores por defecto
+    nombre = cliente.nombre SI cliente.nombre EXISTE Y NO ES nulo SINO ""
+    apellido = cliente.apellido SI cliente.apellido EXISTE Y NO ES nulo SINO ""
+
+    // Concatenar nombre completo, eliminar espacios extras
+    nombreCompleto = CONCATENAR(nombre, " ", apellido)
+    nombreCompleto = ELIMINAR_ESPACIOS_EXTRA(nombreCompleto)
+
+    // PASO 4: Extracción de datos de la orden
+    // Obtener ID con valor por defecto numérico
+    orderId = orden.id SI orden.id EXISTE Y NO ES nulo SINO 0
+
+    // Obtener monto con valor por defecto numérico
+    total = orden.monto SI orden.monto EXISTE Y NO ES nulo SINO 0
+
+    // PASO 5: Construcción del objeto de salida
+    // Mapear todos los campos al formato requerido
+    resultado = {
+        orderId: orderId,
+        customerName: nombreCompleto,
+        total: total
+    }
+
+    // PASO 6: Retorno del resultado
+    RETORNAR resultado
+FIN FUNCIÓN
+
+
+/**
+ * FUNCIÓN AUXILIAR: Eliminar espacios múltiples
+ */
+FUNCIÓN ELIMINAR_ESPACIOS_EXTRA(texto)
+    /**
+     * Entrada: Cadena de texto con posibles espacios múltiples
+     * Salida: Cadena con espacios normalizados
+     */
+
+    // Reemplazar múltiples espacios por uno solo
+    textoLimpio = REEMPLAZAR(texto, /\s+/g, " ")
+
+    // Eliminar espacios al inicio y final
+    textoLimpio = RECORTAR(textoLimpio)
+
+    RETORNAR textoLimpio
+FIN FUNCIÓN
+
+
+
+/**
+ * EJEMPLOS DE EJECUCIÓN:
+ *
+ * EJEMPLO 1 - Entrada completa:
+ * Entrada: {
+ *   cliente: {nombre: "Juan", apellido: "Pérez"},
+ *   orden: {id: 123, monto: 500}
+ * }
+ * Salida: {orderId: 123, customerName: "Juan Pérez", total: 500}
+ *
+ * EJEMPLO 2 - Sin apellido:
+ * Entrada: {
+ *   cliente: {nombre: "Juan", apellido: ""},
+ *   orden: {id: 456, monto: 750}
+ * }
+ * Salida: {orderId: 456, customerName: "Juan", total: 750}
+ *
+ * EJEMPLO 3 - Campos faltantes:
+ * Entrada: {
+ *   cliente: {nombre: "Ana"},
+ *   orden: {id: 789}
+ * }
+ * Salida: {orderId: 789, customerName: "Ana", total: 0}
+ *
+ * EJEMPLO 4 - Entrada inválida:
+ * Entrada: null
+ * Salida: {orderId: 0, customerName: "", total: 0}
+ */
